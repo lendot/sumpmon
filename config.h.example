@@ -1,0 +1,19 @@
+/* copy this file to config.h and edit as necessary */
+
+#define WIFI_SSID "ssid"
+#define WIFI_PASS "password"
+
+// Define the WINC1500 board connections below.
+// If you're following the Adafruit WINC1500 board
+// guide you don't need to modify these:
+#define WINC_CS   8
+#define WINC_IRQ  7
+#define WINC_RST  4
+#define WINC_EN   2     // or, tie EN to VCC
+// The SPI pins of the WINC1500 (SCK, MOSI, MISO) should be
+// connected to the hardware SPI port of the Arduino.
+// On an Uno or compatible these are SCK = #13, MISO = #12, MOSI = #11.
+// On an Arduino Zero use the 6-pin ICSP header, see:
+//   https://www.arduino.cc/en/Reference/SPI
+
+
