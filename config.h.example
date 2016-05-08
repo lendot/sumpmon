@@ -17,3 +17,14 @@
 //   https://www.arduino.cc/en/Reference/SPI
 
 
+/* influxdb settings */
+#define LOG_SERVER "influx"
+#define LOG_PORT 8086
+#define LOG_PATH "/write?db=sump"
+
+/* name to use for measurement */
+#define LOG_PARAM "level"
+
+/* how often to write a measurement */
+#define UPDATE_INTERVAL 15 /* seconds */
+#define UPDATE_MS (UPDATE_INTERVAL*1000)

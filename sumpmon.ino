@@ -13,6 +13,8 @@
 #define OLED_RESET 13
 Adafruit_SSD1306 display(OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
+long last_update=0;
+
 /* Uncomment this block to use hardware SPI
 #define OLED_DC     6
 #define OLED_CS     7
@@ -24,6 +26,8 @@ Adafruit_SSD1306 display(OLED_DC, OLED_RESET, OLED_CS);
 Adafruit_WINC1500 WiFi(WINC_CS, WINC_IRQ, WINC_RST);
 
 int status = WL_IDLE_STATUS;
+
+Adafruit_WINC1500Client client;
 
 void printWifiData() {
 
@@ -122,6 +126,35 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  if (last_update == 0 || (millis() > last_update+UPDATE_MS)) {
+    char post_data[256];
+    char content_length[256];
+    Serial.println("sending reading");
+    if (client.connect(LOG_SERVER,LOG_PORT)) {
+      Serial.println("connected to server");
+      client.print("POST ");
+      client.print(LOG_PATH);
+      client.println(" HTTP/1.1");
+      client.print("Host: ");
+      client.println(LOG_SERVER);
+      client.println("Content-Type: application/x-www-form-urlencoded");
+      sprintf(post_data,"%s value=%d",LOG_PARAM,12);
+      sprintf(content_length,"Content-Length: %d",strlen(post_data));
+      client.println(content_length);
+      Serial.println(content_length);
+      client.println();
+      client.print(post_data);
+      Serial.println(post_data);
+      //client.println();
+    }
+    else {
+      Serial.println("Unable to connect");
+    }
+    last_update = millis();
+  }
+  while (client.available()) {
+    char c = client.read();
+    Serial.write(c);
+  }
 
 }
