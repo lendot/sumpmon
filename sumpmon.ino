@@ -4,6 +4,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "config.h"
+#include "dtostrf.h"
 
 // If using software SPI (the default case):
 #define OLED_MOSI   9
@@ -14,6 +15,9 @@
 Adafruit_SSD1306 display(OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
 long last_update=0;
+
+float interpolation_slope;
+float interpolation_offset;
 
 /* Uncomment this block to use hardware SPI
 #define OLED_DC     6
@@ -98,16 +102,27 @@ void setup_wifi()
   Serial.print("You're connected to the network");
   //printCurrentNet();
   printWifiData();
+
   
 }
 
 void setup() {
+  pinMode(SENSOR_PIN,INPUT);
+  
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
   Serial.println("Got serial");
+
+  interpolation_slope = (float)(HIGH_LEVEL-LOW_LEVEL) / (float)(ADC_HIGH - ADC_LOW);
+  interpolation_offset = (float)LOW_LEVEL - ((float)ADC_LOW * interpolation_slope);
+  Serial.print("interpolation slope: ");
+  Serial.println(interpolation_slope);
+  Serial.print("interpolation offset: ");
+  Serial.println(interpolation_offset);
+
   
   // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC);
@@ -126,10 +141,29 @@ void setup() {
 }
 
 void loop() {
+  float reading=analogRead(SENSOR_PIN);
+  float depth = reading * interpolation_slope + interpolation_offset;
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.print("Reading: ");
+  display.println((int)reading);
+  display.print("Depth: ");
+  display.print(depth);
+  display.println(" in.");
+  display.display();
+
+  delay(250);
+
   if (last_update == 0 || (millis() > last_update+UPDATE_MS)) {
     char post_data[256];
     char content_length[256];
     Serial.println("sending reading");
+    if (client.connected()) {
+      client.stop();
+    }
     if (client.connect(LOG_SERVER,LOG_PORT)) {
       Serial.println("connected to server");
       client.print("POST ");
@@ -138,7 +172,9 @@ void loop() {
       client.print("Host: ");
       client.println(LOG_SERVER);
       client.println("Content-Type: application/x-www-form-urlencoded");
-      sprintf(post_data,"%s value=%d",LOG_PARAM,12);
+      char depth_str[20];
+      dtostrf(depth,0,1,depth_str);
+      sprintf(post_data,"%s value=%s",LOG_PARAM,depth_str);
       sprintf(content_length,"Content-Length: %d",strlen(post_data));
       client.println(content_length);
       Serial.println(content_length);
@@ -150,6 +186,19 @@ void loop() {
     else {
       Serial.println("Unable to connect");
     }
+    Serial.print("Analog reading: ");
+    Serial.println(reading);
+    Serial.print("Depth interpolation: ");
+    Serial.println(depth);
+
+
+/*    reading = (1023 / reading)  - 1;
+    reading = SERIES_RESISTOR / reading;
+    Serial.print("Sensor resistance "); 
+    Serial.println(reading);
+    Serial.println(); */
+
+    
     last_update = millis();
   }
   while (client.available()) {
