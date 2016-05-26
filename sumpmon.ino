@@ -6,25 +6,22 @@
 #include "config.h"
 #include "dtostrf.h"
 
-// If using software SPI (the default case):
-#define OLED_MOSI   9
-#define OLED_CLK   10
-#define OLED_DC    11
-#define OLED_CS    12
-#define OLED_RESET 13
-Adafruit_SSD1306 display(OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+#ifdef DISPLAY_SSD1306
+  #ifdef DISPLAY_I2C
+    Adafruit_SSD1306 display = Adafruit_SSD1306();
+  #elif DISPLAY_HWSPI
+    Adafruit_SSD1306 display(OLED_DC, OLED_RESET, OLED_CS);
+  #else
+    Adafruit_SSD1306 display(OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+  #endif
+#endif
+
 
 long last_update=0;
 
 float interpolation_slope;
 float interpolation_offset;
 
-/* Uncomment this block to use hardware SPI
-#define OLED_DC     6
-#define OLED_CS     7
-#define OLED_RESET  8
-Adafruit_SSD1306 display(OLED_DC, OLED_RESET, OLED_CS);
-*/
 
 // Setup the WINC1500 connection with the pins above and the default hardware SPI.
 Adafruit_WINC1500 WiFi(WINC_CS, WINC_IRQ, WINC_RST);
@@ -35,20 +32,9 @@ Adafruit_WINC1500Client client;
 
 void printWifiData() {
 
-  display.print("SSID: ");
-  display.println(WiFi.SSID());
-  // print your WiFi shield's IP address:
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
-  Serial.println(ip);
-  display.print("IP: ");
-  display.println(ip);
-
-  display.print("Signal: ");
-  display.print(WiFi.RSSI());
-  display.print("dB");
-
   // print your MAC address:
   byte mac[6];
   WiFi.macAddress(mac);
@@ -64,7 +50,17 @@ void printWifiData() {
   Serial.print(mac[1], HEX);
   Serial.print(":");
   Serial.println(mac[0], HEX);
+
+#ifdef DISPLAY_SSD1306  
+  display.print("SSID: ");
+  display.println(WiFi.SSID());
+  display.print("IP: ");
+  display.println(ip);
+  display.print("Signal: ");
+  display.print(WiFi.RSSI());
+  display.print("dB");
   display.display();
+#endif
 }
 
 void setup_wifi()
@@ -83,6 +79,10 @@ void setup_wifi()
     while (true);
   }
 
+#ifdef DISPLAY_1306
+  display.println("Connecting to WiFi");
+#endif
+
   // attempt to connect to Wifi network:
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print("Attempting to connect to SSID: ");
@@ -100,10 +100,8 @@ void setup_wifi()
 
   // you're connected now, so print out the data:
   Serial.print("You're connected to the network");
-  //printCurrentNet();
   printWifiData();
 
-  
 }
 
 void setup() {
@@ -115,7 +113,7 @@ void setup() {
   }
 
   Serial.println("Got serial");
-
+  
   interpolation_slope = (float)(HIGH_LEVEL-LOW_LEVEL) / (float)(ADC_HIGH - ADC_LOW);
   interpolation_offset = (float)LOW_LEVEL - ((float)ADC_LOW * interpolation_slope);
   Serial.print("interpolation slope: ");
@@ -123,7 +121,7 @@ void setup() {
   Serial.print("interpolation offset: ");
   Serial.println(interpolation_offset);
 
-  
+#ifdef DISPLAY_SSD1306
   // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC);
   // init done
@@ -136,14 +134,17 @@ void setup() {
   display.setCursor(0,0);
   display.println("Hello, World!");
   display.display();
+#endif
 
   setup_wifi();
+  delay(1000);
 }
 
 void loop() {
   float reading=analogRead(SENSOR_PIN);
   float depth = reading * interpolation_slope + interpolation_offset;
 
+#ifdef DISPLAY_SSD1306
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -154,6 +155,7 @@ void loop() {
   display.print(depth);
   display.println(" in.");
   display.display();
+#endif
 
   delay(250);
 

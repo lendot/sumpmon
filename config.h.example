@@ -28,3 +28,39 @@
 /* how often to write a measurement */
 #define UPDATE_INTERVAL 15 /* seconds */
 #define UPDATE_MS (UPDATE_INTERVAL*1000)
+
+#define SENSOR_PIN A0
+#define SERIES_RESISTOR 560 /* ohms */
+
+#define ADC_LOW 828 /* ADC reading at low level */
+#define LOW_LEVEL 2 /* inches */
+
+#define ADC_HIGH 640 /* ADC reading at high level */
+#define HIGH_LEVEL 10 /* inches */
+
+#define DISPLAY_SSD1306 /* set if an SSD1306 display is present */
+/* SSD1306 defaults to software SPI */
+
+/* Set the following if using hardware SPI */
+/* #define DISPLAY_HWSPI */
+
+
+/* set the following if using I2C */
+/* #define DISPLAY_I2C */  
+
+
+/* Set these and modify as needed if using software SPI for the display */
+/*
+#define OLED_MOSI   9
+#define OLED_CLK   10
+#define OLED_DC    11
+#define OLED_CS    12
+#define OLED_RESET 13
+*/
+
+/* Set these and modify as needed if using hardware SPI for the display */
+/*
+#define OLED_DC     6
+#define OLED_CS     7
+#define OLED_RESET  8
+*/
